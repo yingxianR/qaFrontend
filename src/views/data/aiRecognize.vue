@@ -70,7 +70,7 @@ export default {
       processing: false,
       resultFileUrl: '',
       errorInfo: '',
-      baseUrl: 'http://192.168.3.88:8080/qaPlatform/'
+      baseUrl: 'http://192.168.3.88:8080/qaPlatform/dhb'
     }
   },
 

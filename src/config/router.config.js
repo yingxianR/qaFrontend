@@ -163,6 +163,12 @@ export const asyncRouterMap = [
             name: 'DataAiRecognize',
             component: () => import('@/views/data/aiRecognize'),
             meta: { title: 'menu.data.aiRecognize', permission: ['table'] }
+          },
+          {
+            path: '/data/bugBroadcast',
+            name: 'DataBugBroadcast',
+            component: () => import('@/views/data/bugBroadcast'),
+            meta: { title: 'menu.data.bugBroadcast', permission: ['table'] }
           }
         ]
       },

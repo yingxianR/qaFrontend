@@ -36,6 +36,7 @@ export default {
     'menu.account.settings': '个人设置',
     'menu.account.trigger': '触发报错',
     'menu.account.logout': '退出登录',
-    'menu.data': 'CRM',
-    'menu.data.aiRecognize': '微信提取自动化识别工具'
+    'menu.data': 'DHB',
+    'menu.data.aiRecognize': '微信提取自动化识别工具',
+    'menu.data.bugBroadcast': 'Bug播报'
 }
