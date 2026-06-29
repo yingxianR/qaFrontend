@@ -38,5 +38,5 @@ export default {
     'menu.account.logout': '退出登录',
     'menu.data': 'DHB',
     'menu.data.aiRecognize': '微信提取自动化识别工具',
-    'menu.data.bugBroadcast': 'Bug播报'
+    'menu.data.bugBroadcast': '云效Bug播报'
 }
