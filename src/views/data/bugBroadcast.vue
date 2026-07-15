@@ -60,7 +60,7 @@
             <a-menu slot="overlay" @click="handleExportMenuClick">
               <a-menu-item key="trend">Bug趋势图</a-menu-item>
               <a-menu-item key="oxiOverview">线上oxi环境Bug统计</a-menu-item>
-              <a-menu-item key="nonOxiOverview">非线上oxi环境Bug统计</a-menu-item>
+              <a-menu-item key="nonOxiOverview">全部Bug统计</a-menu-item>
             </a-menu>
           </a-dropdown>
         </a-col>
@@ -317,6 +317,7 @@ export default {
         fixed: [],
         closed: [],
         pending: [],
+        nonOxiFixed: [],
         unresolvedOverdue: [],
         unverifiedOverdue: [],
         oxiPending: [],
@@ -353,7 +354,7 @@ export default {
       return [
         {
           key: 'nonOxi',
-          title: '非线上oxi环境Bug统计',
+          title: '全部Bug统计',
           items: [
             { key: 'created', label: `${this.periodTitlePrefix()}新增Bug`, count: this.bugGroups.created.length, highPriorityCount: this.countHighPriority(this.bugGroups.created), groupLabel: '负责人', groupStats: this.groupByUser(this.bugGroups.created, 'assignedTo'), moduleStats: this.groupByLabelCount(this.bugGroups.created) },
             {
@@ -367,6 +368,7 @@ export default {
               ]
             },
             { key: 'pending', label: '待修复Bug', count: this.bugGroups.pending.length, highPriorityCount: this.countHighPriority(this.bugGroups.pending), groupLabel: '负责人', groupStats: this.groupByUser(this.bugGroups.pending, 'assignedTo'), moduleStats: this.groupByLabelCount(this.bugGroups.pending) },
+            { key: 'nonOxiFixed', label: '待验证Bug', count: this.bugGroups.nonOxiFixed.length, highPriorityCount: this.countHighPriority(this.bugGroups.nonOxiFixed), groupLabel: '验证人', groupStats: this.groupByUser(this.bugGroups.nonOxiFixed, 'verifier'), moduleStats: this.groupByLabelCount(this.bugGroups.nonOxiFixed) },
             { key: 'unresolvedOverdue', label: '超过3天未解决的Bug', count: this.bugGroups.unresolvedOverdue.length, highPriorityCount: this.countHighPriority(this.bugGroups.unresolvedOverdue), detailKey: 'unresolved', groupLabel: '负责人', groupStats: this.groupByUser(this.bugGroups.unresolvedOverdue, 'assignedTo'), moduleStats: this.groupByLabelCount(this.bugGroups.unresolvedOverdue) },
             { key: 'unverifiedOverdue', label: '超过3天未验证的Bug', count: this.bugGroups.unverifiedOverdue.length, highPriorityCount: this.countHighPriority(this.bugGroups.unverifiedOverdue), detailKey: 'unverified', groupLabel: '验证人', groupStats: this.groupByUser(this.bugGroups.unverifiedOverdue, 'verifier'), moduleStats: this.groupByLabelCount(this.bugGroups.unverifiedOverdue) }
           ]
@@ -588,7 +590,7 @@ export default {
         link.href = dataUrl
         const suffixMap = {
           oxiOverview: '线上oxi环境Bug统计',
-          nonOxiOverview: '非线上oxi环境Bug统计',
+          nonOxiOverview: '全部Bug统计',
           trend: 'Bug趋势图',
           overview: '概览',
           detail: '明细'
@@ -759,9 +761,9 @@ export default {
         this.searchBugWorkitems(this.buildRepairedCondition()),
         this.searchBugWorkitems(this.buildFixedCondition()),
         this.searchBugWorkitems(this.buildClosedCondition()),
-        this.searchBugWorkitems(this.buildNonOxiPendingCondition()),
-        this.searchBugWorkitems(this.buildNonOxiPendingCondition()),
-        this.searchBugWorkitems(this.buildNonOxiUnverifiedCondition()),
+        this.searchBugWorkitems(this.buildPendingBeforeEndCondition()),
+        this.searchBugWorkitems(this.buildPendingBeforeEndCondition()),
+        this.searchBugWorkitems(this.buildUnverifiedBeforeEndCondition()),
         this.searchBugWorkitems(this.buildOxiPendingCondition()),
         this.searchBugWorkitems(this.buildOxiFixedCondition()),
         this.searchBugWorkitems(this.buildOxiPendingCondition()),
@@ -793,6 +795,7 @@ export default {
         fixed: fixedList,
         closed: closedList,
         pending: pendingList,
+        nonOxiFixed: unverifiedSourceList,
         unresolvedOverdue,
         unverifiedOverdue,
         oxiPending: oxiPendingList,
