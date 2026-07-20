@@ -59,8 +59,8 @@
             </a-button>
             <a-menu slot="overlay" @click="handleExportMenuClick">
               <a-menu-item key="trend">Bug趋势图</a-menu-item>
-              <a-menu-item key="oxiOverview">线上oxi环境Bug统计</a-menu-item>
-              <a-menu-item key="nonOxiOverview">全部Bug统计</a-menu-item>
+              <a-menu-item key="oxiOverview">线上Bug分布情况</a-menu-item>
+              <a-menu-item key="nonOxiOverview">全量Bug分布情况</a-menu-item>
             </a-menu>
           </a-dropdown>
         </a-col>
@@ -72,6 +72,44 @@
         <a-card :bordered="false" class="report-card">
           <div class="report-scroll">
             <div v-if="reportText" ref="reportPanel" class="report-panel">
+              <div class="summary-panel all-summary-panel">
+                <div class="summary-panel-header">
+                  <h3>全量Bug统计</h3>
+                  <span>{{ summaryDateText }}</span>
+                </div>
+                <div class="summary-metric-grid">
+                  <div v-for="item in allBugSummaryItems" :key="item.key" class="summary-metric-item" :class="`metric-${item.tone}`">
+                    <div class="summary-metric-label">
+                      <span>{{ item.label }}</span>
+                    </div>
+                    <div class="summary-metric-value">
+                      <strong>{{ item.count }}</strong>
+                      <span>个</span>
+                    </div>
+                    <div class="summary-metric-priority">紧急/高优先级：{{ item.highPriorityCount }} 个</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="summary-panel online-summary-panel">
+                <div class="summary-panel-header">
+                  <h3>线上Bug统计</h3>
+                  <span>{{ summaryDateText }}</span>
+                </div>
+                <div class="summary-metric-grid online-metric-grid">
+                  <div v-for="item in onlineBugSummaryItems" :key="item.key" class="summary-metric-item" :class="`metric-${item.tone}`">
+                    <div class="summary-metric-label">
+                      <span>{{ item.label }}</span>
+                    </div>
+                    <div class="summary-metric-value">
+                      <strong>{{ item.count }}</strong>
+                      <span>个</span>
+                    </div>
+                    <div class="summary-metric-priority">紧急/高优先级：{{ item.highPriorityCount }} 个</div>
+                  </div>
+                </div>
+              </div>
+
               <div ref="overviewPanel" class="overview-head">
                 <div class="overview-list">
                   <div v-for="group in overviewGroups" :key="group.key" class="overview-group" :data-group-key="group.key">
@@ -180,7 +218,7 @@
                 </div>
               </div>
 
-              <div ref="trendPanel" class="trend-panel">
+              <div ref="trendPanel" class="trend-panel dashboard-trend">
                 <div class="report-section-header">
                   <h3>Bug趋势</h3>
                 </div>
@@ -354,7 +392,7 @@ export default {
       return [
         {
           key: 'nonOxi',
-          title: '全部Bug统计',
+          title: '全量Bug分布情况',
           items: [
             { key: 'created', label: `${this.periodTitlePrefix()}新增Bug`, count: this.bugGroups.created.length, highPriorityCount: this.countHighPriority(this.bugGroups.created), groupLabel: '负责人', groupStats: this.groupByUser(this.bugGroups.created, 'assignedTo'), moduleStats: this.groupByLabelCount(this.bugGroups.created) },
             {
@@ -375,7 +413,7 @@ export default {
         },
         {
           key: 'oxi',
-          title: '线上oxi环境Bug统计',
+          title: '线上Bug分布情况',
           items: [
             { key: 'oxiPending', label: '待修复Bug', count: this.bugGroups.oxiPending.length, highPriorityCount: this.countHighPriority(this.bugGroups.oxiPending), groupLabel: '负责人', groupStats: this.groupByUser(this.bugGroups.oxiPending, 'assignedTo'), moduleStats: this.groupByLabelCount(this.bugGroups.oxiPending) },
             { key: 'oxiFixed', label: '待验证Bug', count: this.bugGroups.oxiFixed.length, highPriorityCount: this.countHighPriority(this.bugGroups.oxiFixed), groupLabel: '负责人', groupStats: this.groupByUser(this.bugGroups.oxiFixed, 'assignedTo'), moduleStats: this.groupByLabelCount(this.bugGroups.oxiFixed) },
@@ -383,6 +421,32 @@ export default {
             { key: 'oxiUnverifiedOverdue', label: '超过3天未验证的Bug', count: this.bugGroups.oxiUnverifiedOverdue.length, highPriorityCount: this.countHighPriority(this.bugGroups.oxiUnverifiedOverdue), detailKey: 'oxiUnverified', groupLabel: '验证人', groupStats: this.groupByUser(this.bugGroups.oxiUnverifiedOverdue, 'verifier'), moduleStats: this.groupByLabelCount(this.bugGroups.oxiUnverifiedOverdue) }
           ]
         }
+      ]
+    },
+
+    summaryDateText () {
+      const weekMap = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+      const today = moment()
+      return `${today.format('YYYY年M月D日')} ${weekMap[today.day()]}`
+    },
+
+    allBugSummaryItems () {
+      return [
+        this.buildSummaryMetric('created', `${this.periodTitlePrefix()}新增Bug`, this.bugGroups.created, 'red'),
+        this.buildSummaryMetric('repaired', `${this.periodTitlePrefix()}已修复Bug`, this.bugGroups.repaired, 'green'),
+        this.buildSummaryMetric('pending', '待修复Bug', this.bugGroups.pending, 'blue'),
+        this.buildSummaryMetric('nonOxiFixed', '待验证Bug', this.bugGroups.nonOxiFixed, 'purple'),
+        this.buildSummaryMetric('unresolvedOverdue', '超过3天未解决Bug', this.bugGroups.unresolvedOverdue, 'orange'),
+        this.buildSummaryMetric('unverifiedOverdue', '超过3天未验证Bug', this.bugGroups.unverifiedOverdue, 'rose')
+      ]
+    },
+
+    onlineBugSummaryItems () {
+      return [
+        this.buildSummaryMetric('oxiPending', '待修复Bug', this.bugGroups.oxiPending, 'blue'),
+        this.buildSummaryMetric('oxiFixed', '待验证Bug', this.bugGroups.oxiFixed, 'purple'),
+        this.buildSummaryMetric('oxiUnresolvedOverdue', '超过3天未解决Bug', this.bugGroups.oxiUnresolvedOverdue, 'orange'),
+        this.buildSummaryMetric('oxiUnverifiedOverdue', '超过3天未验证Bug', this.bugGroups.oxiUnverifiedOverdue, 'rose')
       ]
     },
 
@@ -589,8 +653,8 @@ export default {
         const link = document.createElement('a')
         link.href = dataUrl
         const suffixMap = {
-          oxiOverview: '线上oxi环境Bug统计',
-          nonOxiOverview: '全部Bug统计',
+          oxiOverview: '线上Bug分布情况',
+          nonOxiOverview: '全量Bug分布情况',
           trend: 'Bug趋势图',
           overview: '概览',
           detail: '明细'
@@ -883,6 +947,16 @@ export default {
       this.$set(this.detailPageMap, key, page)
     },
 
+    buildSummaryMetric (key, label, list, tone) {
+      return {
+        key,
+        label,
+        tone,
+        count: list.length,
+        highPriorityCount: this.countHighPriority(list)
+      }
+    },
+
     buildCreatedCondition () {
       return this.stringifyConditions([
         this.createDateFilter('gmtCreate')
@@ -1040,7 +1114,7 @@ export default {
       if (start.isSame(end, 'day')) {
         return start.format('M.D')
       }
-      return `${start.format('M.DD')}-${end.format('M.DD')}`
+      return `${start.format('M.D')}-${end.format('M.D')}`
     },
 
     groupByUser (list, field) {
@@ -1414,7 +1488,150 @@ export default {
 }
 
 .report-panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(420px, 1.45fr);
+  gap: 18px;
+  align-items: stretch;
   color: #223047;
+}
+
+.summary-panel {
+  order: 1;
+  overflow: hidden;
+  min-height: 100%;
+  border: 1px solid #e4ebf5;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 8px 20px rgba(39, 65, 96, 0.04);
+}
+
+.summary-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2edf9;
+  background: linear-gradient(135deg, #eaf4ff 0%, #f5faff 100%);
+}
+
+.summary-panel-header h3 {
+  margin: 0;
+  color: #17345f;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.summary-panel-header span {
+  flex: 0 0 auto;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.summary-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.summary-metric-item {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #edf2f8;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.summary-metric-label {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: 20px;
+  color: #20304a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.summary-metric-label i {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #6bb8ff;
+}
+
+.summary-metric-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-metric-value {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 12px;
+  color: #0f68b1;
+}
+
+.summary-metric-value strong {
+  font-size: 28px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.summary-metric-value span {
+  color: #607089;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.summary-metric-priority {
+  margin-top: 8px;
+  color: #fa8c16;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.metric-red .summary-metric-label i,
+.trend-stat.created i {
+  background: #f05a4f;
+}
+
+.metric-green .summary-metric-label i {
+  background: #23b26d;
+}
+
+.metric-blue .summary-metric-label i {
+  background: #6bb8ff;
+}
+
+.metric-purple .summary-metric-label i {
+  background: #6f7bd9;
+}
+
+.metric-orange .summary-metric-label i {
+  background: #fa8c16;
+}
+
+.metric-rose .summary-metric-label i {
+  background: #c8476f;
+}
+
+.metric-red .summary-metric-value strong,
+.metric-green .summary-metric-value strong,
+.metric-blue .summary-metric-value strong,
+.metric-purple .summary-metric-value strong,
+.metric-orange .summary-metric-value strong,
+.metric-rose .summary-metric-value strong {
+  color: #0f68b1;
+}
+
+.dashboard-trend {
+  order: 1;
+  margin-bottom: 0 !important;
 }
 
 .trend-panel {
@@ -1472,6 +1689,8 @@ export default {
 
 .overview-head {
   display: block;
+  grid-column: 1 / -1;
+  order: 2;
 }
 
 .overview-list {
@@ -2174,6 +2393,27 @@ export default {
 /deep/ .ant-calendar-picker-container {
   z-index: 30;
 }
+@media (max-width: 1280px) {
+  .report-panel {
+    grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+  }
+
+  .dashboard-trend,
+  .overview-head {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 860px) {
+  .report-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 </style>
 
 <style>
